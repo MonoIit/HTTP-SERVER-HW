@@ -7,13 +7,12 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Server {
+
 
     private final List<String> validPaths = List.of(
             "/index.html",
@@ -26,7 +25,8 @@ public class Server {
             "/forms.html",
             "/classic.html",
             "/events.html",
-            "/events.js"
+            "/events.js",
+            "/default_get.html"
     );
 
     public Server(int port, int threadPoolSize) {
@@ -47,33 +47,40 @@ public class Server {
 
     private Runnable handleRequest(Socket socket) {
         return (() -> {
-            try (final var in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            try (final var in = new BufferedInputStream(socket.getInputStream());
                  final var out = new BufferedOutputStream(socket.getOutputStream())) {
 
-                    final var requestLine = in.readLine();
-                    Request request = new Request(requestLine);
-
-                    for (var pair : request.getQueryParams().entrySet()) {
-                        System.out.println(pair.getKey() + " = " + pair.getValue());
-                    }
-                    System.out.println(request.getQueryParam("last"));
 
 
-                    if (!validPaths.contains(request.getUrl())) {
-                        writeResponse(out, "404 Not Found", "text/plain", new byte[0]);
-                        return;
-                    }
+                Request request = new Request(in);
 
-                    final var filePath = Path.of(".", "public", request.getUrl());
-                    final var mimeType = Files.probeContentType(filePath);
 
-                    // special case for classic
-                    if (request.getUrl().equals("/classic.html")) {
-                        handleClassicHtml(out, filePath, mimeType);
-                        return;
-                    }
+                for (var pair : request.getQueryParams()) {
+                    System.out.println(pair.getName() + " = " + pair.getValue());
+                }
+                System.out.println(request.getQueryParam("last"));
 
-                    handlePath(out, filePath, mimeType);
+                for (var pair : request.getPostParams()) {
+                    System.out.println(pair.getName() + " = " + pair.getValue());
+                }
+                System.out.println(request.getPostParam("value"));
+
+
+                if (!validPaths.contains(request.getPath())) {
+                    writeResponse(out, "404 Not Found", "text/plain", new byte[0]);
+                    return;
+                }
+
+                final var filePath = Path.of(".", "public", request.getPath());
+                final var mimeType = Files.probeContentType(filePath);
+
+                // special case for classic
+                if (request.getPath().equals("/classic.html")) {
+                    handleClassicHtml(out, filePath, mimeType);
+                    return;
+                }
+
+                handlePath(out, filePath, mimeType);
 
             } catch (IOException | RuntimeException e) {
                 e.printStackTrace();
