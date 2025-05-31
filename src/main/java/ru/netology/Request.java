@@ -20,8 +20,7 @@ public class Request {
     private String method;
     private String path;
     private Map<String, String> headers;
-    private List<NameValuePair> queryParams;
-    private List<NameValuePair> postParams;
+    private Map<String, List<String>> postParams;
     private String body;
 
     public Request(BufferedInputStream in) throws IOException {
@@ -110,38 +109,20 @@ public class Request {
         return method;
     }
 
-
-    public List<NameValuePair> getQueryParams() {
-        if (queryParams == null) {
-            String query = path.substring(path.indexOf('?') + 1);
-            queryParams = URLEncodedUtils.parse(query, StandardCharsets.UTF_8);
-        }
-        return queryParams;
-    }
-
     public String getHeaderParam(String key) {
         return headers.getOrDefault(key, null);
     }
 
-    public String getQueryParam(String name) {
-        for (var pair : queryParams) {
-            if (pair.getName().equals(name)) return pair.getValue();
-        }
-        return null;
-    }
 
-    public List<NameValuePair> getPostParams() {
+    public Map<String, List<String>> getPostParams() {
         if (postParams == null) {
-            postParams = URLEncodedUtils.parse(body, StandardCharsets.UTF_8);
+            postParams = urlencodedParser.parse(body);
         }
         return postParams;
     }
 
-    public String getPostParam(String name) {
-        for (var pair : postParams) {
-            if (pair.getName().equals(name)) return pair.getValue();
-        }
-        return null;
+    public List<String> getPostParam(String name) {
+        return postParams.getOrDefault(name, null);
     }
 
     private int indexOf(byte[] array, byte[] target, int start, int max) {
