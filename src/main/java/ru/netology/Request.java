@@ -1,11 +1,13 @@
 package ru.netology;
 
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileUploadException;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 
-import javax.naming.Name;
 import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -22,6 +24,7 @@ public class Request {
     private Map<String, String> headers;
     private List<NameValuePair> queryParams;
     private List<NameValuePair> postParams;
+    private Map<String, List<FileItem>> partParams;
     private String body;
 
     public Request(BufferedInputStream in) throws IOException {
@@ -45,13 +48,13 @@ public class Request {
         if (!ALLOWED_METHODS.contains(method)) {
             throw new IOException("bad request");
         }
-        System.out.println(method);
+        //System.out.println(method);
 
         path = requestLine[1];
         if (!path.startsWith("/")) {
             throw new IOException("bad request");
         }
-        System.out.println(path);
+        //System.out.println(path);
 
         // ищем заголовки
         final var headersStart = requestLineEnd + HEADERS_DELIMITER.length;
@@ -69,7 +72,7 @@ public class Request {
                 headers.put(key, value);
             }
         }
-        System.out.println(headers);
+        //System.out.println(headers);
 
         // отматываем на начало буфера
         in.reset();
@@ -162,5 +165,16 @@ public class Request {
         System.arraycopy(array, start, subArray, 0, start + size - start);
 
         return subArray;
+    }
+
+    public Map<String, List<FileItem>> getParts() throws Exception {
+        if (partParams == null) {
+            partParams = MultipartParser.parseBody(body, headers.get("Content-Type"), Integer.parseInt(headers.get("Content-Length")));
+        }
+        return partParams;
+    }
+
+    public List<FileItem> getPart(String name) {
+        return partParams.getOrDefault(name, null);
     }
 }

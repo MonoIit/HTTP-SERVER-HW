@@ -1,6 +1,9 @@
 package ru.netology;
 
 
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileUploadException;
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -8,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -55,15 +59,39 @@ public class Server {
                 Request request = new Request(in);
 
 
-                for (var pair : request.getQueryParams()) {
-                    System.out.println(pair.getName() + " = " + pair.getValue());
-                }
-                System.out.println(request.getQueryParam("last"));
+//                for (var pair : request.getQueryParams()) {
+//                    System.out.println(pair.getName() + " = " + pair.getValue());
+//                }
+//                System.out.println(request.getQueryParam("last"));
+//                System.out.println(request.getHeaderParam("Content-Type"));
+//
+//                for (var pair : request.getPostParams()) {
+//                    System.out.println(pair.getName() + " = " + pair.getValue());
+//                }
+//                System.out.println(request.getPostParam("value"));
 
-                for (var pair : request.getPostParams()) {
-                    System.out.println(pair.getName() + " = " + pair.getValue());
+                Map<String, List<FileItem>> map = request.getParts();
+                for (Map.Entry<String, List<FileItem>> entry : map.entrySet()) {
+                    String paramName = entry.getKey();
+                    List<FileItem> values = entry.getValue();
+
+                    for (FileItem item : values) {
+                        if (item.isFormField()) {
+                            System.out.println(paramName + " = " + item.getString());
+                        } else {
+                            System.out.println(paramName + " (файл) = " + item.getName() + ", размер: " + item.getSize());
+                        }
+                    }
                 }
-                System.out.println(request.getPostParam("value"));
+
+                for (FileItem item : request.getPart("image")) {
+                    if (item.isFormField()) {
+                        System.out.println(item.getFieldName() + " = " + item.getString());
+                    } else {
+                        System.out.println(item.getFieldName() + " (файл) = " + item.getName() + ", размер: " + item.getSize());
+                    }
+
+                }
 
 
                 if (!validPaths.contains(request.getPath())) {
@@ -84,6 +112,8 @@ public class Server {
 
             } catch (IOException | RuntimeException e) {
                 e.printStackTrace();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
         });
     }
