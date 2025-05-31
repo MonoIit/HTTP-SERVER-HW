@@ -53,8 +53,8 @@ public class Server {
                     final var requestLine = in.readLine();
                     Request request = new Request(requestLine);
 
-                    for (var pair : request.getQueryParams().entrySet()) {
-                        System.out.println(pair.getKey() + " = " + pair.getValue());
+                    for (var pair : request.getQueryParams()) {
+                        System.out.println(pair.getName() + " = " + pair.getValue());
                     }
                     System.out.println(request.getQueryParam("last"));
 

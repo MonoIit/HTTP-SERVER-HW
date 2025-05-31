@@ -15,7 +15,7 @@ public class Request {
     private String method;
     private String url;
     private Map<String, String> Headers;
-    private Map<String, String> queryParams;
+    private List<NameValuePair> queryParams;
     private String body;
 
     public Request(String requestLine) {
@@ -43,19 +43,18 @@ public class Request {
     }
 
 
-    public Map<String, String> getQueryParams() {
+    public List<NameValuePair> getQueryParams() {
         if (queryParams == null) {
-            queryParams = new HashMap<>();
             String query = url.substring(url.indexOf('?') + 1);
-            List<NameValuePair> pairs = URLEncodedUtils.parse(query, StandardCharsets.UTF_8);
-            for (var pair : pairs) {
-                queryParams.putIfAbsent(pair.getName(), pair.getValue());
-            }
+            queryParams = URLEncodedUtils.parse(query, StandardCharsets.UTF_8);
         }
         return queryParams;
     }
 
     public String getQueryParam(String name) {
-        return queryParams.getOrDefault(name, null);
+        for (var pair : queryParams) {
+            if (pair.getName().equals(name)) return pair.getValue();
+        }
+        return null;
     }
 }
