@@ -27,7 +27,7 @@ public class Request {
     private Map<String, List<FileItem>> partParams;
     private String body;
 
-    public Request(BufferedInputStream in) throws IOException {
+    public Request(BufferedInputStream in) throws Exception {
         in.mark(BUFFER_LIMIT);
         final var buffer = new byte[BUFFER_LIMIT];
         final var read = in.read(buffer);
@@ -90,6 +90,8 @@ public class Request {
                 body = new String(bodyBytes);
                 System.out.println(body);
             }
+
+            partParams = MultipartParser.parseBody(body, headers.get("Content-Type"), Integer.parseInt(headers.get("Content-Length")));
         }
     }
 
@@ -167,10 +169,7 @@ public class Request {
         return subArray;
     }
 
-    public Map<String, List<FileItem>> getParts() throws Exception {
-        if (partParams == null) {
-            partParams = MultipartParser.parseBody(body, headers.get("Content-Type"), Integer.parseInt(headers.get("Content-Length")));
-        }
+    public Map<String, List<FileItem>> getParts() {
         return partParams;
     }
 

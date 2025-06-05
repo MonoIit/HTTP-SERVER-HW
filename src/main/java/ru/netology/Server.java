@@ -70,27 +70,29 @@ public class Server {
 //                }
 //                System.out.println(request.getPostParam("value"));
 
-                Map<String, List<FileItem>> map = request.getParts();
-                for (Map.Entry<String, List<FileItem>> entry : map.entrySet()) {
-                    String paramName = entry.getKey();
-                    List<FileItem> values = entry.getValue();
+                if (request.getMethod().equals("POST")) {
+                    Map<String, List<FileItem>> map = request.getParts();
+                    for (Map.Entry<String, List<FileItem>> entry : map.entrySet()) {
+                        String paramName = entry.getKey();
+                        List<FileItem> values = entry.getValue();
 
-                    for (FileItem item : values) {
-                        if (item.isFormField()) {
-                            System.out.println(paramName + " = " + item.getString());
-                        } else {
-                            System.out.println(paramName + " (файл) = " + item.getName() + ", размер: " + item.getSize());
+                        for (FileItem item : values) {
+                            if (item.isFormField()) {
+                                System.out.println(paramName + " = " + item.getString());
+                            } else {
+                                System.out.println(paramName + " (файл) = " + item.getName() + ", размер: " + item.getSize());
+                            }
                         }
                     }
-                }
 
-                for (FileItem item : request.getPart("image")) {
-                    if (item.isFormField()) {
-                        System.out.println(item.getFieldName() + " = " + item.getString());
-                    } else {
-                        System.out.println(item.getFieldName() + " (файл) = " + item.getName() + ", размер: " + item.getSize());
+                    for (FileItem item : request.getPart("image")) {
+                        if (item.isFormField()) {
+                            System.out.println(item.getFieldName() + " = " + item.getString());
+                        } else {
+                            System.out.println(item.getFieldName() + " (файл) = " + item.getName() + ", размер: " + item.getSize());
+                        }
+
                     }
-
                 }
 
 
