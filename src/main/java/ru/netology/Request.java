@@ -86,6 +86,8 @@ public class Request {
                 body = new String(bodyBytes);
                 System.out.println(body);
             }
+
+            postParams = urlencodedParser.parse(body);
         }
     }
 
@@ -115,9 +117,6 @@ public class Request {
 
 
     public Map<String, List<String>> getPostParams() {
-        if (postParams == null) {
-            postParams = urlencodedParser.parse(body);
-        }
         return postParams;
     }
 

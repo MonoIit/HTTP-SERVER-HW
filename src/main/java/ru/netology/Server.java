@@ -54,10 +54,12 @@ public class Server {
 
                 Request request = new Request(in);
 
-                for (var pair : request.getPostParams().entrySet()) {
-                    System.out.println(pair.getKey() + " = " + pair.getValue());
+                if (request.getMethod().equals("POST")) {
+                    for (var pair : request.getPostParams().entrySet()) {
+                        System.out.println(pair.getKey() + " = " + pair.getValue());
+                    }
+                    System.out.println(request.getPostParam("value"));
                 }
-                System.out.println(request.getPostParam("value"));
 
 
                 if (!validPaths.contains(request.getPath())) {
