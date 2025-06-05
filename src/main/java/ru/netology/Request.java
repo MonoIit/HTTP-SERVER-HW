@@ -23,6 +23,9 @@ public class Request {
         if (parts.length != REQUEST_LINE_LENGTH) throw new RuntimeException("bad requestLine");
         method = parts[0];
         url = parts[1];
+
+        String query = url.substring(url.indexOf('?') + 1);
+        queryParams = URLEncodedUtils.parse(query, StandardCharsets.UTF_8);
     }
 
 
@@ -44,10 +47,6 @@ public class Request {
 
 
     public List<NameValuePair> getQueryParams() {
-        if (queryParams == null) {
-            String query = url.substring(url.indexOf('?') + 1);
-            queryParams = URLEncodedUtils.parse(query, StandardCharsets.UTF_8);
-        }
         return queryParams;
     }
 
