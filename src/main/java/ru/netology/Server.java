@@ -12,6 +12,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Server {
+
+
     private final List<String> validPaths = List.of(
             "/index.html",
             "/spring.svg",
@@ -23,11 +25,12 @@ public class Server {
             "/forms.html",
             "/classic.html",
             "/events.html",
-            "/events.js"
+            "/events.js",
+            "/default_get.html"
     );
 
     public Server(int port, int threadPoolSize) {
-        executor = Executors.newFixedThreadPool(64);
+        executor = Executors.newFixedThreadPool(threadPoolSize);
         this.port = port;
     }
 
@@ -35,7 +38,7 @@ public class Server {
     private final int port;
 
     public void start() throws IOException {
-        try (final var serverSocket = new ServerSocket(9999)) {
+        try (final var serverSocket = new ServerSocket(port)) {
             while (true) {
                 executor.execute(handleRequest(serverSocket.accept()));
             }
@@ -44,32 +47,38 @@ public class Server {
 
     private Runnable handleRequest(Socket socket) {
         return (() -> {
-            try (final var in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            try (final var in = new BufferedInputStream(socket.getInputStream());
                  final var out = new BufferedOutputStream(socket.getOutputStream())) {
 
-                    final var requestLine = in.readLine();
-                    final var parts = requestLine.split(" ");
 
-                    if (parts.length != 3) return;
 
-                    final var path = parts[1];
-                    if (!validPaths.contains(path)) {
-                        writeResponse(out, "404 Not Found", "text/plain", new byte[0]);
-                        return;
+                Request request = new Request(in);
+
+                if (request.getMethod().equals("POST")) {
+                    for (var pair : request.getPostParams().entrySet()) {
+                        System.out.println(pair.getKey() + " = " + pair.getValue());
                     }
+                    System.out.println(request.getPostParam("value"));
+                }
 
-                    final var filePath = Path.of(".", "public", path);
-                    final var mimeType = Files.probeContentType(filePath);
 
-                    // special case for classic
-                    if (path.equals("/classic.html")) {
-                        handleClassicHtml(out, filePath, mimeType);
-                        return;
-                    }
+                if (!validPaths.contains(request.getPath())) {
+                    writeResponse(out, "404 Not Found", "text/plain", new byte[0]);
+                    return;
+                }
 
-                    handlePath(out, filePath, mimeType);
+                final var filePath = Path.of(".", "public", request.getPath());
+                final var mimeType = Files.probeContentType(filePath);
 
-            } catch (IOException e) {
+                // special case for classic
+                if (request.getPath().equals("/classic.html")) {
+                    handleClassicHtml(out, filePath, mimeType);
+                    return;
+                }
+
+                handlePath(out, filePath, mimeType);
+
+            } catch (IOException | RuntimeException e) {
                 e.printStackTrace();
             }
         });
@@ -106,4 +115,5 @@ public class Server {
         out.write(content);
         out.flush();
     }
+
 }
