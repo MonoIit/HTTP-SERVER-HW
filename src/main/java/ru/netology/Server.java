@@ -7,11 +7,14 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Server {
+
     private final List<String> validPaths = List.of(
             "/index.html",
             "/spring.svg",
@@ -27,7 +30,7 @@ public class Server {
     );
 
     public Server(int port, int threadPoolSize) {
-        executor = Executors.newFixedThreadPool(64);
+        executor = Executors.newFixedThreadPool(threadPoolSize);
         this.port = port;
     }
 
@@ -35,7 +38,7 @@ public class Server {
     private final int port;
 
     public void start() throws IOException {
-        try (final var serverSocket = new ServerSocket(9999)) {
+        try (final var serverSocket = new ServerSocket(port)) {
             while (true) {
                 executor.execute(handleRequest(serverSocket.accept()));
             }
@@ -48,28 +51,31 @@ public class Server {
                  final var out = new BufferedOutputStream(socket.getOutputStream())) {
 
                     final var requestLine = in.readLine();
-                    final var parts = requestLine.split(" ");
+                    Request request = new Request(requestLine);
 
-                    if (parts.length != 3) return;
+                    for (var pair : request.getQueryParams()) {
+                        System.out.println(pair.getName() + " = " + pair.getValue());
+                    }
+                    System.out.println(request.getQueryParam("last"));
 
-                    final var path = parts[1];
-                    if (!validPaths.contains(path)) {
+
+                    if (!validPaths.contains(request.getUrl())) {
                         writeResponse(out, "404 Not Found", "text/plain", new byte[0]);
                         return;
                     }
 
-                    final var filePath = Path.of(".", "public", path);
+                    final var filePath = Path.of(".", "public", request.getUrl());
                     final var mimeType = Files.probeContentType(filePath);
 
                     // special case for classic
-                    if (path.equals("/classic.html")) {
+                    if (request.getUrl().equals("/classic.html")) {
                         handleClassicHtml(out, filePath, mimeType);
                         return;
                     }
 
                     handlePath(out, filePath, mimeType);
 
-            } catch (IOException e) {
+            } catch (IOException | RuntimeException e) {
                 e.printStackTrace();
             }
         });
@@ -106,4 +112,5 @@ public class Server {
         out.write(content);
         out.flush();
     }
+
 }
